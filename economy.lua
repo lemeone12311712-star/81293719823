@@ -1170,10 +1170,27 @@ end)
 
 -- Открытие/закрытие меню
 local menuOpen = false
-toggleBtn.MouseButton1Click:Connect(function()
-    if not dragging then
-        menuOpen = not menuOpen
-        menuFrame.Visible = menuOpen
+local wasDragging = false
+
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        wasDragging = false
+    end
+end)
+
+toggleBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if not wasDragging then
+            menuOpen = not menuOpen
+            menuFrame.Visible = menuOpen
+        end
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging then
+        wasDragging = true
+        -- остальной код перетаскивания...
     end
 end)
 
