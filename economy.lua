@@ -925,3 +925,273 @@ game.DescendantAdded:Connect(function(obj)
         end
     end
 end)
+
+-- PriceHighlight GUI Script
+-- Подсветка цен с настраиваемым меню
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Настройки по умолчанию
+local settings = {
+    minPrice = 15000,
+    maxPrice = 100000,
+    color = Color3.fromRGB(255, 0, 0),
+    enabled = true
+}
+
+local colors = {
+    { name = "Красный",    color = Color3.fromRGB(255, 0, 0) },
+    { name = "Зеленый",    color = Color3.fromRGB(0, 255, 0) },
+    { name = "Синий",      color = Color3.fromRGB(0, 150, 255) },
+    { name = "Желтый",     color = Color3.fromRGB(255, 220, 0) },
+    { name = "Фиолет",     color = Color3.fromRGB(180, 0, 255) },
+    { name = "Белый",      color = Color3.fromRGB(255, 255, 255) },
+}
+
+-- Создаем GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PriceHighlightGui"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = PlayerGui
+
+-- Кнопка-переключатель (перетаскиваемая)
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Name = "ToggleButton"
+toggleBtn.Size = UDim2.new(0, 50, 0, 50)
+toggleBtn.Position = UDim2.new(0, 20, 0.5, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.Text = "💰"
+toggleBtn.TextSize = 22
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Parent = screenGui
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 12)
+toggleCorner.Parent = toggleBtn
+
+-- Меню
+local menuFrame = Instance.new("Frame")
+menuFrame.Name = "Menu"
+menuFrame.Size = UDim2.new(0, 260, 0, 320)
+menuFrame.Position = UDim2.new(0, 80, 0.5, -160)
+menuFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+menuFrame.BorderSizePixel = 0
+menuFrame.Visible = false
+menuFrame.Parent = screenGui
+
+local menuCorner = Instance.new("UICorner")
+menuCorner.CornerRadius = UDim.new(0, 12)
+menuCorner.Parent = menuFrame
+
+-- Заголовок меню
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "💰 Price Highlight"
+title.TextSize = 14
+title.Font = Enum.Font.GothamBold
+title.BorderSizePixel = 0
+title.Parent = menuFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = title
+
+-- От (минимальная сумма)
+local minLabel = Instance.new("TextLabel")
+minLabel.Size = UDim2.new(1, -20, 0, 20)
+minLabel.Position = UDim2.new(0, 10, 0, 45)
+minLabel.BackgroundTransparency = 1
+minLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+minLabel.Text = "От (мин. сумма):"
+minLabel.TextSize = 12
+minLabel.Font = Enum.Font.Gotham
+minLabel.TextXAlignment = Enum.TextXAlignment.Left
+minLabel.Parent = menuFrame
+
+local minInput = Instance.new("TextBox")
+minInput.Size = UDim2.new(1, -20, 0, 32)
+minInput.Position = UDim2.new(0, 10, 0, 68)
+minInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+minInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+minInput.Text = tostring(settings.minPrice)
+minInput.TextSize = 13
+minInput.Font = Enum.Font.Gotham
+minInput.BorderSizePixel = 0
+minInput.Parent = menuFrame
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 8)
+minCorner.Parent = minInput
+
+-- До (максимальная сумма)
+local maxLabel = Instance.new("TextLabel")
+maxLabel.Size = UDim2.new(1, -20, 0, 20)
+maxLabel.Position = UDim2.new(0, 10, 0, 110)
+maxLabel.BackgroundTransparency = 1
+maxLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+maxLabel.Text = "До (макс. сумма):"
+maxLabel.TextSize = 12
+maxLabel.Font = Enum.Font.Gotham
+maxLabel.TextXAlignment = Enum.TextXAlignment.Left
+maxLabel.Parent = menuFrame
+
+local maxInput = Instance.new("TextBox")
+maxInput.Size = UDim2.new(1, -20, 0, 32)
+maxInput.Position = UDim2.new(0, 10, 0, 133)
+maxInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+maxInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+maxInput.Text = tostring(settings.maxPrice)
+maxInput.TextSize = 13
+maxInput.Font = Enum.Font.Gotham
+maxInput.BorderSizePixel = 0
+maxInput.Parent = menuFrame
+
+local maxCorner = Instance.new("UICorner")
+maxCorner.CornerRadius = UDim.new(0, 8)
+maxCorner.Parent = maxInput
+
+-- Цвет подсветки
+local colorLabel = Instance.new("TextLabel")
+colorLabel.Size = UDim2.new(1, -20, 0, 20)
+colorLabel.Position = UDim2.new(0, 10, 0, 175)
+colorLabel.BackgroundTransparency = 1
+colorLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+colorLabel.Text = "Цвет подсветки:"
+colorLabel.TextSize = 12
+colorLabel.Font = Enum.Font.Gotham
+colorLabel.TextXAlignment = Enum.TextXAlignment.Left
+colorLabel.Parent = menuFrame
+
+-- Кнопки цветов
+local colorFrame = Instance.new("Frame")
+colorFrame.Size = UDim2.new(1, -20, 0, 60)
+colorFrame.Position = UDim2.new(0, 10, 0, 198)
+colorFrame.BackgroundTransparency = 1
+colorFrame.Parent = menuFrame
+
+local colorLayout = Instance.new("UIGridLayout")
+colorLayout.CellSize = UDim2.new(0, 70, 0, 26)
+colorLayout.CellPadding = UDim2.new(0, 5, 0, 5)
+colorLayout.Parent = colorFrame
+
+local selectedColorBtn = nil
+
+for _, c in ipairs(colors) do
+    local btn = Instance.new("TextButton")
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = c.color
+    btn.Text = c.name
+    btn.TextSize = 11
+    btn.Font = Enum.Font.GothamBold
+    btn.BorderSizePixel = 0
+    btn.Parent = colorFrame
+
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        settings.color = c.color
+        if selectedColorBtn then
+            selectedColorBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        selectedColorBtn = btn
+    end)
+end
+
+-- Кнопка Применить
+local applyBtn = Instance.new("TextButton")
+applyBtn.Size = UDim2.new(1, -20, 0, 32)
+applyBtn.Position = UDim2.new(0, 10, 0, 278)
+applyBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+applyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+applyBtn.Text = "✓ Применить"
+applyBtn.TextSize = 13
+applyBtn.Font = Enum.Font.GothamBold
+applyBtn.BorderSizePixel = 0
+applyBtn.Parent = menuFrame
+
+local applyCorner = Instance.new("UICorner")
+applyCorner.CornerRadius = UDim.new(0, 8)
+applyCorner.Parent = applyBtn
+
+applyBtn.MouseButton1Click:Connect(function()
+    local minVal = tonumber(minInput.Text)
+    local maxVal = tonumber(maxInput.Text)
+    if minVal then settings.minPrice = minVal end
+    if maxVal then settings.maxPrice = maxVal end
+end)
+
+-- Логика перетаскивания кнопки
+local dragging = false
+local dragStart = nil
+local startPos = nil
+
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+    end
+end)
+
+toggleBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        toggleBtn.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        menuFrame.Position = UDim2.new(
+            toggleBtn.Position.X.Scale,
+            toggleBtn.Position.X.Offset + 60,
+            toggleBtn.Position.Y.Scale,
+            toggleBtn.Position.Y.Offset - 160
+        )
+    end
+end)
+
+-- Открытие/закрытие меню
+local menuOpen = false
+toggleBtn.MouseButton1Click:Connect(function()
+    if not dragging then
+        menuOpen = not menuOpen
+        menuFrame.Visible = menuOpen
+    end
+end)
+
+-- Логика подсветки цен
+local function getNum(text)
+    local n = string.match(text, "%d+")
+    return tonumber(n)
+end
+
+local function checkLabel(obj)
+    if obj:IsA("TextLabel") then
+        local num = getNum(obj.Text)
+        if num and num >= settings.minPrice and num <= settings.maxPrice then
+            obj.TextColor3 = settings.color
+        end
+    end
+end
+
+game.DescendantAdded:Connect(function(obj)
+    checkLabel(obj)
+end)
